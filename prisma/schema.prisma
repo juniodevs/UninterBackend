@@ -1,0 +1,114 @@
+// Prisma Schema para a Rede Raízes do Nordeste (SQLite)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                Int            @id @default(autoincrement())
+  nome              String
+  email             String         @unique
+  senhaHash         String
+  perfil            String         @default("CLIENTE") // CLIENTE, GERENTE, ADMIN
+  consentimentoLgpd Boolean        @default(true)
+  criadoEm          DateTime       @default(now())
+
+  pedidos           Pedido[]
+  logs              LogAuditoria[]
+}
+
+model Unidade {
+  id          Int       @id @default(autoincrement())
+  nome        String
+  endereco    String
+  cidade      String
+  estado      String
+  tipoCozinha String    @default("COMPLETA") // COMPLETA, REDUZIDA
+  ativo       Boolean   @default(true)
+  criadoEm    DateTime  @default(now())
+
+  estoques    Estoque[]
+  pedidos     Pedido[]
+}
+
+model Produto {
+  id             Int          @id @default(autoincrement())
+  nome           String
+  descricao      String
+  preco          Float
+  categoria      String       @default("Comidas")
+  sazonalJunino  Boolean      @default(false)
+  ativo          Boolean      @default(true)
+  criadoEm       DateTime     @default(now())
+
+  estoques       Estoque[]
+  itensPedido    ItemPedido[]
+}
+
+model Estoque {
+  id           Int      @id @default(autoincrement())
+  unidadeId    Int
+  produtoId    Int
+  quantidade   Int      @default(0)
+  atualizadoEm DateTime @updatedAt
+
+  unidade      Unidade  @relation(fields: [unidadeId], references: [id], onDelete: Cascade)
+  produto      Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@unique([unidadeId, produtoId])
+}
+
+model Pedido {
+  id          Int             @id @default(autoincrement())
+  unidadeId   Int
+  clienteId   Int
+  canalPedido String          // APP, TOTEM, BALCAO, PICKUP, WEB
+  status      String          @default("AGUARDANDO_PAGAMENTO") // AGUARDANDO_PAGAMENTO, PREPARANDO, PRONTO, ENTREGUE, CANCELADO
+  valorTotal  Float
+  criadoEm    DateTime        @default(now())
+  atualizadoEm DateTime       @updatedAt
+
+  unidade     Unidade         @relation(fields: [unidadeId], references: [id])
+  cliente     Usuario         @relation(fields: [clienteId], references: [id])
+  itens       ItemPedido[]
+  pagamentos  PagamentoMock[]
+}
+
+model ItemPedido {
+  id            Int      @id @default(autoincrement())
+  pedidoId      Int
+  produtoId     Int
+  quantidade    Int
+  precoUnitario Float
+
+  pedido        Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto       Produto  @relation(fields: [produtoId], references: [id])
+}
+
+model PagamentoMock {
+  id             Int      @id @default(autoincrement())
+  pedidoId       Int
+  status         String   // APROVADO, RECUSADO
+  metodo         String   @default("PIX") // PIX, CARTAO, MOCK
+  payloadEnvio   String
+  payloadRetorno String
+  criadoEm       DateTime @default(now())
+
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+}
+
+model LogAuditoria {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int?
+  acao      String   // ex: CRIACAO_PEDIDO, ATUALIZACAO_STATUS, MOVIMENTACAO_ESTOQUE
+  detalhe   String
+  ip        String?
+  criadoEm  DateTime @default(now())
+
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+}
