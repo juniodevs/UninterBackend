@@ -1,0 +1,254 @@
+{
+  "info": {
+    "_postman_id": "raizes-do-nordeste-api-tests-2026",
+    "name": "API Raízes do Nordeste - Projeto Multidisciplinar UNINTER",
+    "description": "Coleção de testes com os 10 cenários obrigatórios (6 positivos e 4 negativos) conforme o Roteiro da Trilha Back-End.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "tokenCliente", "value": "" },
+    { "key": "tokenGerente", "value": "" },
+    { "key": "ultimoPedidoId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "01 - Autenticação",
+      "item": [
+        {
+          "name": "T01 - [Positivo] Login Válido (Cliente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code é 200', function () { pm.response.to.have.status(200); });",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('tokenCliente', jsonData.accessToken);",
+                  "pm.collectionVariables.set('tokenCliente', jsonData.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria.cliente@exemplo.com\",\n  \"senha\": \"Senha@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Gerente (Auxiliar para testes com permissão)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('tokenGerente', jsonData.accessToken);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao.gerente@raizesdonordeste.com.br\",\n  \"senha\": \"Senha@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "T02 - [Negativo] Acesso sem Token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/perfil",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "perfil"]
+            }
+          }
+        },
+        {
+          "name": "T03 - [Negativo] Acesso com Perfil Sem Permissão (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidadeId\": 1,\n  \"produtoId\": 1,\n  \"quantidade\": 10,\n  \"tipo\": \"ENTRADA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/estoque/movimentar",
+              "host": ["{{baseUrl}}"],
+              "path": ["estoque", "movimentar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Unidades e Cardápio",
+      "item": [
+        {
+          "name": "T04 - [Positivo] Consultar Cardápio por Unidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/unidades/1/cardapio",
+              "host": ["{{baseUrl}}"],
+              "path": ["unidades", "1", "cardapio"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Pedidos (Multicanalidade)",
+      "item": [
+        {
+          "name": "T05 - [Positivo] Criar Pedido Válido com canalPedido (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code é 201', function () { pm.response.to.have.status(201); });",
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('ultimoPedidoId', jsonData.pedidoId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidadeId\": 1,\n  \"canalPedido\": \"TOTEM\",\n  \"itens\": [\n    { \"produtoId\": 1, \"quantidade\": 2 },\n    { \"produtoId\": 3, \"quantidade\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["pedidos"]
+            }
+          }
+        },
+        {
+          "name": "T06 - [Negativo] Criar Pedido sem canalPedido (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidadeId\": 1,\n  \"itens\": [\n    { \"produtoId\": 1, \"quantidade\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["pedidos"]
+            }
+          }
+        },
+        {
+          "name": "T07 - [Negativo] Pedido com Estoque Insuficiente (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenCliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidadeId\": 1,\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    { \"produtoId\": 1, \"quantidade\": 99999 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["pedidos"]
+            }
+          }
+        },
+        {
+          "name": "T08 - [Positivo] Listar Pedidos Filtrando por Canal (?canalPedido=TOTEM)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos?canalPedido=TOTEM",
+              "host": ["{{baseUrl}}"],
+              "path": ["pedidos"],
+              "query": [
+                { "key": "canalPedido", "value": "TOTEM" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Pagamento Mock Desacoplado",
+      "item": [
+        {
+          "name": "T09 - [Positivo] Pagamento Mock Aprovado (Avança p/ PREPARANDO)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pedidoId\": {{ultimoPedidoId}},\n  \"metodo\": \"PIX\",\n  \"simulacaoStatus\": \"APROVADO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pagamentos/mock/processar",
+              "host": ["{{baseUrl}}"],
+              "path": ["pagamentos", "mock", "processar"]
+            }
+          }
+        },
+        {
+          "name": "T10 - [Negativo] Pagamento Mock Recusado (402)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pedidoId\": {{ultimoPedidoId}},\n  \"metodo\": \"CARTAO_CREDITO\",\n  \"simulacaoStatus\": \"RECUSADO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pagamentos/mock/processar",
+              "host": ["{{baseUrl}}"],
+              "path": ["pagamentos", "mock", "processar"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
