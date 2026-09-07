@@ -1,5 +1,3 @@
-// Prisma Schema para a Rede Raízes do Nordeste (SQLite)
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,7 +12,7 @@ model Usuario {
   nome              String
   email             String         @unique
   senhaHash         String
-  perfil            String         @default("CLIENTE") // CLIENTE, GERENTE, ADMIN
+  perfil            String         @default("CLIENTE")
   consentimentoLgpd Boolean        @default(true)
   criadoEm          DateTime       @default(now())
 
@@ -28,7 +26,7 @@ model Unidade {
   endereco    String
   cidade      String
   estado      String
-  tipoCozinha String    @default("COMPLETA") // COMPLETA, REDUZIDA
+  tipoCozinha String    @default("COMPLETA")
   ativo       Boolean   @default(true)
   criadoEm    DateTime  @default(now())
 
@@ -67,8 +65,8 @@ model Pedido {
   id          Int             @id @default(autoincrement())
   unidadeId   Int
   clienteId   Int
-  canalPedido String          // APP, TOTEM, BALCAO, PICKUP, WEB
-  status      String          @default("AGUARDANDO_PAGAMENTO") // AGUARDANDO_PAGAMENTO, PREPARANDO, PRONTO, ENTREGUE, CANCELADO
+  canalPedido String
+  status      String          @default("AGUARDANDO_PAGAMENTO")
   valorTotal  Float
   criadoEm    DateTime        @default(now())
   atualizadoEm DateTime       @updatedAt
@@ -93,8 +91,8 @@ model ItemPedido {
 model PagamentoMock {
   id             Int      @id @default(autoincrement())
   pedidoId       Int
-  status         String   // APROVADO, RECUSADO
-  metodo         String   @default("PIX") // PIX, CARTAO, MOCK
+  status         String
+  metodo         String   @default("PIX")
   payloadEnvio   String
   payloadRetorno String
   criadoEm       DateTime @default(now())
@@ -105,7 +103,7 @@ model PagamentoMock {
 model LogAuditoria {
   id        Int      @id @default(autoincrement())
   usuarioId Int?
-  acao      String   // ex: CRIACAO_PEDIDO, ATUALIZACAO_STATUS, MOVIMENTACAO_ESTOQUE
+  acao      String
   detalhe   String
   ip        String?
   criadoEm  DateTime @default(now())
