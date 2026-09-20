@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { pedidoService } from '../../application/pedidos/pedidoService.js';
 import { CanalPedido, StatusPedido } from '../../domain/enums.js';
+import { AppError } from '../middlewares/errorHandler.js';
 
 const itemSchema = z.object({
   produtoId: z.number({ required_error: 'produtoId é obrigatório' }).int().positive(),
@@ -79,6 +80,12 @@ export const pedidoController = {
   async buscarPorId(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Number(req.params.id);
+      if (isNaN(id)) {
+        throw new AppError('Identificador do pedido inválido.', 422, 'PARAMETRO_INVALIDO', [
+          { field: 'id', issue: 'Deve ser um número inteiro' },
+        ]);
+      }
+
       const pedido = await pedidoService.buscarPorId(id);
       return res.status(200).json(pedido);
     } catch (err) {
@@ -89,6 +96,12 @@ export const pedidoController = {
   async atualizarStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Number(req.params.id);
+      if (isNaN(id)) {
+        throw new AppError('Identificador do pedido inválido.', 422, 'PARAMETRO_INVALIDO', [
+          { field: 'id', issue: 'Deve ser um número inteiro' },
+        ]);
+      }
+
       const body = statusSchema.parse(req.body);
 
       const pedido = await pedidoService.atualizarStatus(
